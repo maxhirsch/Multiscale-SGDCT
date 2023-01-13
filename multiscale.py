@@ -35,46 +35,44 @@ def multiscale(alpha, L, epsilon, sigma, X0, T, n):
 X0 = 0
 alpha = 1#3.14
 L = 2 * np.pi
-epsilon = 0.05#0.1
-sigma = 1.0
+epsilon = 0.1
+sigma = 0.5
 
-T = 10000.
-n = 10000000
+T = 10**4
+n = 10**7
 dt = T / n
 
 Y = multiscale(alpha, L, epsilon, sigma, X0, T, n)
 plt.plot(np.linspace(0, T, n+1), Y)
 plt.show()
 
-Y_f = np.zeros(Y.shape[0]) # filtered
-Y_f[0] = 0
-for i in range(1, Y.shape[0]):
-    Y_f[i] = Y_f[i-1] * np.exp(-dt) + np.exp(-dt) * Y[i-1] * dt
-
-plt.plot(np.linspace(0, T, n+1), Y)
-plt.plot(np.linspace(0, T, n+1), Y_f)
-plt.show()
-
 
 A_array = []
 
-A_old = 100.
+A_old = 0.
 A_new = 0. 
 for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
     alpha_t = 1 / (1 + t/10)
     Yi = Y[i]
-    Y_fi = Y_f[i]
     A_new = A_old - alpha_t * A_old * Yi**2 * dt - alpha_t * Yi * (Y[i+1] - Yi)
     A_old = A_new
     A_array.append(A_new)
 
-plt.plot(np.log(np.arange(len(A_array))+1), A_array, label="Estimate of $A$")
+K = L**2 / (integrate.quad(lambda y: np.exp(-np.sin(2 * np.pi / L * y)/sigma), 0, L)[0] * integrate.quad(lambda y: np.exp(np.sin(2 * np.pi / L * y)/sigma), 0, L)[0])
+
+plt.semilogx(dt * np.arange(len(A_array)), A_array, label="Estimate of $A$")
+plt.axhline(y=alpha, color='r', linestyle='--')
+plt.axhline(y=K*alpha, color='r', linestyle='-')
+plt.text(10**(-3), K*alpha + 0.07, "$A$")
+plt.text(10**(-3), alpha - 0.15, "$\\alpha$")
+plt.xlabel("Time")
+plt.ylabel("Estimate of $A$")
 plt.show()
 
 plt.hist(A_array[-100:])
 plt.show()
 
-K = L**2 / (integrate.quad(lambda y: np.exp(-np.sin(2 * np.pi / L * y)/sigma), 0, L)[0] * integrate.quad(lambda y: np.exp(np.sin(2 * np.pi / L * y)/sigma), 0, L)[0])
+
 
 print(A_array[-1], "Expected A:", K*alpha)
 
@@ -85,7 +83,7 @@ def multiscale_repeated_estimates(n_trials):
     for trial in nb.prange(n_trials):
         Y = multiscale(alpha, L, epsilon, sigma, X0, T, n)
 
-        A_old = 100.
+        A_old = 0.
         A_new = 0. 
         for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
             alpha_t = 1 / (1 + t/10)
@@ -98,5 +96,7 @@ def multiscale_repeated_estimates(n_trials):
 
 estimates = multiscale_repeated_estimates(200)
 plt.hist(estimates)
+plt.axvline(x=alpha, c='r', linestyle='--')
+#plt.axvline(x=K*alpha, c='r', linestyle='-')
 plt.show()
 print("Mean estimate =", np.mean(estimates))

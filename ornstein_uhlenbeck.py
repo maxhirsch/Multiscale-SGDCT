@@ -4,12 +4,15 @@ import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 import scipy.stats as stats
 from tqdm import tqdm 
+import sys
 
 @nb.njit
 def seed(a):
     np.random.seed(a)
 
 seed(0)
+
+sqrt2sigma = 1
 
 @nb.njit
 def ornstein_uhlenbeck(A, X0, T, n):
@@ -29,7 +32,7 @@ def ornstein_uhlenbeck(A, X0, T, n):
         if i == 0:
             Y[i] = X0
         else:
-            Y[i] = Y[i-1] - A * Y[i-1] * dt + sqrt_dt * np.random.normal()
+            Y[i] = Y[i-1] - A * Y[i-1] * dt + sqrt2sigma * sqrt_dt * np.random.normal()
         
         t_ = t
     
@@ -39,19 +42,20 @@ def ornstein_uhlenbeck(A, X0, T, n):
 Ornstein-Uhlenbeck Process
 """
 
-X0 = 0.
-A = 5
-T = 100000. # Large T important! increase...
-n = 1000000
+X0 = 1.
+A = 1.41
+T = 50000. # Large T important!
+n = 500000
 dt = T / n
 
 Y = ornstein_uhlenbeck(A, X0, T, n)
+
 plt.plot(np.linspace(0, T, n+1), Y)
 plt.show()
 
 A_array = []
 
-A_old = 100.
+A_old = 0.
 A_new = 0. 
 for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
     alpha_t = 1 / (1 + t/10)
@@ -60,8 +64,10 @@ for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
     A_old = A_new
     A_array.append(A_new)
 
-plt.plot(np.log(np.arange(len(A_array))+1), A_array, label="Estimate of $A$")
+plt.semilogx(dt * np.arange(len(A_array)), A_array, label="Estimate of $A$")
 plt.axhline(y=A, color='r', label="$A$")
+plt.xlabel("Time")
+plt.ylabel("Estimate of $A$")
 plt.show()
 
 print(A_array[-5:])
@@ -87,10 +93,11 @@ def ornstein_uhlenbeck_repeated_estimates(n_trials):
 estimates = ornstein_uhlenbeck_repeated_estimates(1000)
 plt.hist(estimates[:, -1])
 plt.axvline(x=A, color='r')
+plt.xlabel("Estimate of $A$")
 plt.show()
 print("Mean estimate =", np.mean(estimates[:, -1]))
 
-Sigma_bar = 10**2 / (2 * (10 - A))
+Sigma_bar = (10 * sqrt2sigma**2)**2 / (2 * (10 * sqrt2sigma**2 - A))
 sqrt_Sigma_bar = np.sqrt(Sigma_bar)
 
 plt.hist(np.sqrt(T) * (estimates[:, -1] - A), density=True, bins=30)

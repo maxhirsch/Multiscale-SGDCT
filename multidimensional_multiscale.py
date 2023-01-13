@@ -41,7 +41,7 @@ A1 = 1
 A2 = 2
 L = 2 * np.pi
 epsilon = 0.1
-sigma = 1.0
+sigma = 0.5
 
 T = 10**5 # Large T important!
 n = 10**8
@@ -54,9 +54,9 @@ plt.show()
 
 A_array = []
 
-A1_old = 10.
+A1_old = 0.
 A1_new = 0. 
-A2_old = 10.
+A2_old = 0.
 A2_new = 0. 
 for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
     alpha_t = 1 / (1 + t/10)
@@ -70,13 +70,17 @@ for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
 
 A_array = np.array(A_array)
 
-plt.plot(np.log(np.arange(len(A_array))+1), A_array[:, 0], label="Estimate of $A1$")
+plt.semilogx(dt * np.arange(len(A_array)), A_array[:, 0], label="Estimate of $A1$")
 plt.axhline(y=A1, color='r', label="$A1$")
+plt.xlabel("Time")
+plt.ylabel("Estimate of $A_1$")
 plt.show()
 print(A_array[-5:, 0])
 
-plt.plot(np.log(np.arange(len(A_array))+1), A_array[:, 1], label="Estimate of $A2$")
+plt.semilogx(dt * np.arange(len(A_array)), A_array[:, 1], label="Estimate of $A2$")
 plt.axhline(y=A2, color='r', label="$A2$")
+plt.xlabel("Time")
+plt.ylabel("Estimate of $A_2$")
 plt.show()
 print(A_array[-5:, 1])
 

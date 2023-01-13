@@ -48,7 +48,7 @@ plt.show()
 
 A_array = []
 
-A_old = 100.
+A_old = 0.
 A_new = 0. 
 for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
     alpha_t = 1 / (1 + t/10)
@@ -57,8 +57,10 @@ for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
     A_old = A_new
     A_array.append(A_new)
 
-plt.plot(np.log(np.arange(len(A_array))+1), A_array, label="Estimate of $A$")
+plt.semilogx(dt * np.arange(len(A_array)), A_array, label="Estimate of $A$")
 plt.axhline(y=A, color='r', label="$A$")
+plt.xlabel("Time")
+plt.ylabel("Estimate of $A$")
 plt.show()
 print(A_array[-5:])
 
@@ -80,8 +82,9 @@ def another_potential_repeated_estimates(n_trials):
         estimates[trial] = A_new
     return estimates
 
-estimates = another_potential_repeated_estimates(200)
+estimates = another_potential_repeated_estimates(1000)
 plt.hist(estimates)
 plt.axvline(x=A, color='r')
+plt.xlabel("Estimate of $A$")
 plt.show()
 print("Mean estimate =", np.mean(estimates))
