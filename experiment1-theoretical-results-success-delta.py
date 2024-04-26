@@ -3,8 +3,13 @@ import numba as nb
 import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 from tqdm import tqdm 
+from pathlib import Path
 
-plt.rcParams['font.size'] = 12
+Path("./Paper Figures/").mkdir(parents=True, exist_ok=True)
+Path("./Paper Data/").mkdir(parents=True, exist_ok=True)
+
+plt.rcParams['font.size'] = 18
+plt.rcParams['figure.figsize'] = (6.4, 4.8)
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 blue = colors[0]
@@ -43,11 +48,11 @@ def multiscale(alpha, L, epsilon, sigma, X0, T, n):
 X0 = 0
 alpha = 1
 L = 2 * np.pi
-epsilon = 0.1
-sigma = 0.1
+epsilon = 0.1#0.025
+sigma = 0.5
 
-T = 10**4
-n = 10**7
+T = 10**3
+n = 10**6#64*10**7
 dt = T / n
 
 Y = multiscale(alpha, L, epsilon, sigma, X0, T, n)
@@ -77,7 +82,7 @@ if delta_experiment:
         A_old = 0.
         A_new = 0. 
         for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
-            alpha_t = 1 / (1 + t/10)
+            alpha_t = 1 / (1 + t)#1 / (1 + t/10)
             Yi = Y[i]
             Y_fi = Y_f[i]
             A_new = A_old - alpha_t * A_old * Yi*Y_fi * dt - alpha_t * Y_fi * (Y[i+1] - Yi)
@@ -86,14 +91,21 @@ if delta_experiment:
         estimates_exp.append(A_new)
 
     # plot with alpha and A = K*alpha as dotted lines
-    plt.plot(delta_exponents, estimates_exp, c=blue, label="Exponential Filter")
-    plt.axhline(y=alpha, c=orange, linestyle="--")
-    plt.text(0.05, alpha-0.02, "$\\alpha$")
-    plt.axhline(y=K*alpha, c=orange, linestyle="--")
-    plt.text(0.05, K*alpha+0.01, "$A$")
+    plt.plot(delta_exponents, estimates_exp, c=blue, label="Exponential Filter", linewidth=3)
+    plt.axhline(y=alpha, c=orange, linestyle="--", linewidth=3)
+    plt.text(0.05, alpha-0.05, "$\\alpha$")
+    plt.axhline(y=K*alpha, c=orange, linestyle="--", linewidth=3)
+    plt.text(0.05, K*alpha+0.02, "$A$")
     plt.xlabel("$\zeta^{-1}$ (where $\\varepsilon = \delta^{\zeta}$)")
     plt.ylabel("Estimate $\widehat{A}^\\varepsilon_T$")
-    plt.show()
+    plt.savefig('./Paper Figures/experiment1-theoretical-results-delta.png', bbox_inches='tight')
+    plt.savefig('./Paper Figures/experiment1-theoretical-results-delta.pdf', bbox_inches='tight')
+    plt.savefig('./Paper Figures/experiment1-theoretical-results-delta.svg', bbox_inches='tight')
+    plt.clf()
+    with open("./Paper Data/experiment1-theoretical-results-delta-exponents.npy", 'wb') as f:
+        np.save(f, delta_exponents)
+    with open("./Paper Data/experiment1-theoretical-results-delta-estimates.npy", 'wb') as f:
+        np.save(f, estimates_exp)
 
 
 #########################################################
@@ -121,11 +133,16 @@ for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
     A_array.append(A_new)
 
 K = L**2 / (integrate.quad(lambda y: np.exp(-np.sin(2 * np.pi / L * y)/sigma), 0, L)[0] * integrate.quad(lambda y: np.exp(np.sin(2 * np.pi / L * y)/sigma), 0, L)[0])
-plt.plot(dt*np.arange(len(A_array)), A_array, color=blue, label="Estimate of $A$")
-plt.axhline(y=K*alpha, color=orange)
+plt.plot(dt*np.arange(len(A_array)), A_array, color=blue, label="Estimate of $A$", linewidth=3)
+plt.axhline(y=K*alpha, color=orange, linewidth=3)
 plt.xlabel("Time $t$")
 plt.ylabel("Estimate $\widehat A^\\varepsilon_t$")
-plt.show()
+plt.savefig('./Paper Figures/experiment1-theoretical-results-sample.png', bbox_inches='tight')
+plt.savefig('./Paper Figures/experiment1-theoretical-results-sample.pdf', bbox_inches='tight')
+plt.savefig('./Paper Figures/experiment1-theoretical-results-sample.svg', bbox_inches='tight')
+plt.clf()
+with open("./Paper Data/experiment1-theoretical-results-sample.npy", 'wb') as f:
+    np.save(f, A_array)
 
 print(A_array[-1], "Expected A:", K*alpha)
 
@@ -157,16 +174,24 @@ def multiscale_repeated_estimates(n_trials):
 
 estimates = multiscale_repeated_estimates(50)
 plt.hist(estimates[:, -1])
-plt.axvline(x=K*alpha, color=orange)
+plt.axvline(x=K*alpha, color=orange, linewidth=3)
 plt.title("Estimate $\widehat A_T^\\varepsilon$")
-plt.show()
+plt.savefig('./Paper Figures/experiment1-theoretical-results-histogram.png', bbox_inches='tight')
+plt.savefig('./Paper Figures/experiment1-theoretical-results-histogram.pdf', bbox_inches='tight')
+plt.savefig('./Paper Figures/experiment1-theoretical-results-histogram.svg', bbox_inches='tight')
+plt.clf()
+with open("./Paper Data/experiment1-theoretical-results-histogram.npy", 'wb') as f:
+    np.save(f, estimates)
 print("Mean estimate =", np.mean(estimates[:, -1]), "Standard deviation =", np.std(estimates[:, -1]))
 
 A = K*alpha
 
-plt.loglog(np.linspace(0, T, n+1), np.sqrt(np.mean((estimates - A)**2, axis=0)), color=blue, label="$L^2$ Error")
-plt.loglog(np.linspace(0, T, n+1), np.linspace(0, T, n+1)**(-0.5), color=orange, label="$\mathcal{O}(T^{-1/2})$ Reference")
+plt.loglog(np.linspace(0, T, n+1), np.sqrt(np.mean((estimates - A)**2, axis=0)), color=blue, label="$L^2$ Error", linewidth=3)
+plt.loglog(np.linspace(0, T, n+1), np.linspace(0, T, n+1)**(-0.5), color=orange, label="$\mathcal{O}(T^{-1/2})$ Reference", linewidth=3)
 plt.legend()
 plt.xlabel("Time $t$")
 plt.ylabel("Approximate $L^2$ Error of $\widehat{A}_t^\\varepsilon$ from $A$")
-plt.show()
+plt.savefig('./Paper Figures/experiment1-theoretical-results-convergence.png', bbox_inches='tight')
+plt.savefig('./Paper Figures/experiment1-theoretical-results-convergence.pdf', bbox_inches='tight')
+plt.savefig('./Paper Figures/experiment1-theoretical-results-convergence.svg', bbox_inches='tight')
+plt.clf()

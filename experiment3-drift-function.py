@@ -4,17 +4,21 @@ import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 from tqdm import tqdm 
 import sys
-import winsound
+from pathlib import Path
 
-plt.rcParams['font.size'] = 12
+Path("./Paper Figures/").mkdir(parents=True, exist_ok=True)
+Path("./Paper Data/").mkdir(parents=True, exist_ok=True)
+
+plt.rcParams['font.size'] = 18
+plt.rcParams['figure.figsize'] = (6.4, 4.8)
 
 MOVING_AVERAGE = True
 X0 = 0.
 epsilon = 0.05#0.1
 sigma = 2#1.5#0.5
 
-T = 10**3 # Large T important!
-n = 8*10**6
+T = 10**2#3 # Large T important!
+n = 8*10**5#6
 dt = T / n
 
 def V1(x, y): # p(x, y)
@@ -63,10 +67,6 @@ def multiscale(epsilon, sigma, X0, T, n):
 ###########################################################################
 
 Y = multiscale(epsilon, sigma, X0, T, n)
-print(Y[:5])
-
-#plt.plot(np.linspace(0, T, n+1), Y)
-#plt.show()
 
 ###########################################################################
 
@@ -87,11 +87,6 @@ else:
     for i in tqdm(range(shift, Y.shape[0])):
         Y_f[i] = 1/delta * np.sum(Y[i-shift:i]) * dt
     print(Y, Y_f)
-
-
-#plt.plot(np.linspace(0, T, n+1), Y)
-#plt.plot(np.linspace(0, T, n+1), Y_f)
-#plt.show()
 
 ###########################################################################
 
@@ -117,79 +112,28 @@ for i, t in tqdm(enumerate(np.linspace(0, T, n+1)[:-1])):
     A_array.append(A_new)
 
 A_array = np.array(A_array)
-"""
-plt.semilogx(dt * np.arange(len(A_array)), A_array[:, 0], label="Estimate of $A1$")
-#plt.axhline(y=A1, color='r', label="$A1$")
-plt.xlabel("Time")
-plt.ylabel("Estimate of $A_1$")
-plt.show()
-print(A_array[-5:, 0])
-
-plt.semilogx(dt * np.arange(len(A_array)), A_array[:, 1], label="Estimate of $A2$")
-#plt.axhline(y=A2, color='r', label="$A2$")
-plt.xlabel("Time")
-plt.ylabel("Estimate of $A_2$")
-plt.show()
-print(A_array[-5:, 1])
-"""
 
 duration = 1500  # milliseconds
 freq = 660  # Hz
-winsound.Beep(freq, duration)
 
 x = np.linspace(np.min(Y), np.max(Y), 500)
-plt.plot(x, [V_tilde_prime(xi) for xi in x], label="Exact $b$")
-plt.plot(x, np.sum(A_new[:, None]*np.array([x**i for i in range(r+1)]), axis=0), label="Approximation $\widetilde b$")
-plt.title("Drift Function")
+plt.plot(x, [V_tilde_prime(xi) for xi in x], label="Exact $b$", linewidth=3)
+plt.plot(x, np.sum(A_new[:, None]*np.array([x**i for i in range(r+1)]), axis=0), label="Approximation $\widetilde b$", linewidth=3)
+#plt.title("Drift Function")
 plt.xlabel("$x$")
 plt.ylabel("$\widetilde b(x)$")
 plt.legend()
-plt.show()
+if MOVING_AVERAGE:
+    plt.savefig('./Paper Figures/experiment3-ma.png', bbox_inches='tight')
+    plt.savefig('./Paper Figures/experiment3-ma.pdf', bbox_inches='tight')
+    plt.savefig('./Paper Figures/experiment3-ma.svg', bbox_inches='tight')
+    with open("./Paper Data/experiment3-ma.npy", 'wb') as f:
+        np.save(f, A_new)
+else:
+    plt.savefig('./Paper Figures/experiment3-exponential.png', bbox_inches='tight')
+    plt.savefig('./Paper Figures/experiment3-exponential.pdf', bbox_inches='tight')
+    plt.savefig('./Paper Figures/experiment3-exponential.svg', bbox_inches='tight')
+    with open("./Paper Data/experiment3-exponential.npy", 'wb') as f:
+        np.save(f, A_new)
+plt.clf()
 
-
-
-
-
-
-
-
-
-
-
-
-if False:
-    # try this for many trials
-    @nb.njit(parallel=True)
-    def another_potential_repeated_estimates(n_trials):
-        estimates = np.zeros((n_trials, 2))
-        for trial in nb.prange(n_trials):
-            Y = another_potential(A1, A2, X0, T, n)
-
-            A1_old = 10.
-            A1_new = 0. 
-            A2_old = 10.
-            A2_new = 0. 
-            for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
-                alpha_t = 1 / (1 + t/10)
-                Yi = Y[i]
-                A1_new = A1_old - alpha_t * (-Yi**3) * (-A1_old*Yi**3 + A2_old*Yi) * dt + alpha_t * (-Yi**3) * (Y[i+1] - Yi)
-                A2_new = A2_old - alpha_t * (Yi) * (-A1_old*Yi**3 + A2_old*Yi) * dt + alpha_t * (Yi) * (Y[i+1] - Yi)
-
-                A1_old = A1_new
-                A2_old = A2_new
-            
-            print(A1_new, A2_new)
-            estimates[trial, 0] = A1_new
-            estimates[trial, 1] = A2_new
-        return estimates
-
-    estimates = another_potential_repeated_estimates(200)
-    plt.hist(estimates[:, 0])
-    plt.axvline(x=A1, color='r')
-    plt.show()
-    print("Mean estimate (A1) =", np.mean(estimates[:, 0]))
-
-    plt.hist(estimates[:, 1])
-    plt.axvline(x=A2, color='r')
-    plt.show()
-    print("Mean estimate (A2) =", np.mean(estimates[:, 1]))
