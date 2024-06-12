@@ -1,15 +1,19 @@
 import numpy as np
 import numba as nb
 import matplotlib.pyplot as plt
-import scipy.integrate as integrate
+from scipy.special import i0
 from tqdm import tqdm 
 from pathlib import Path
 
 Path("./Paper Figures/").mkdir(parents=True, exist_ok=True)
 Path("./Paper Data/").mkdir(parents=True, exist_ok=True)
 
-plt.rcParams['font.size'] = 18
-plt.rcParams['figure.figsize'] = (6.4, 4.8)
+params = {'legend.fontsize': 'x-large',
+         'axes.labelsize': 'x-large',
+         'axes.titlesize':'x-large',
+         'xtick.labelsize':'x-large',
+         'ytick.labelsize':'x-large'}
+plt.rcParams.update(params)
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 blue = colors[0]
@@ -67,18 +71,16 @@ for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
     A_old = A_new
     A_array.append(A_new)
 
-K = L**2 / (integrate.quad(lambda y: np.exp(-np.sin(2 * np.pi / L * y)/sigma), 0, L)[0] * integrate.quad(lambda y: np.exp(np.sin(2 * np.pi / L * y)/sigma), 0, L)[0])
+K = 1/i0(1/sigma)**2
 
 plt.plot(dt * np.arange(len(A_array)), A_array, c=blue, label="Estimate of $A$", linewidth=3)
 plt.axhline(y=alpha, color=orange, linestyle='--', linewidth=3)
 plt.axhline(y=K*alpha, color=orange, linestyle='-', linewidth=3)
-plt.text(0.95*T, K*alpha + 0.07, "$A$")
-plt.text(0.95*T, alpha - 0.19, "$\\alpha$")
+plt.text(0.95*T, K*alpha + 0.07, "$A$", fontsize=16)
+plt.text(0.95*T, alpha - 0.19, "$\\alpha$", fontsize=16)
 plt.xlabel("Time $t$")
 plt.ylabel("Estimate $\widetilde A^\\varepsilon_t$")
-plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-sample.png', bbox_inches='tight')
 plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-sample.pdf', bbox_inches='tight')
-plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-sample.svg', bbox_inches='tight')
 plt.clf()
 with open("./Paper Data/experiment1-theoretical-results-failure-sample.npy", 'wb') as f:
     np.save(f, A_array)
@@ -110,19 +112,17 @@ for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
 plt.plot(dt * np.arange(len(A_array)), A_array, c=blue, label="Estimate of $A$", linewidth=3)
 plt.axhline(y=alpha, color=orange, linestyle='--', linewidth=3)
 plt.axhline(y=K*alpha, color=orange, linestyle='-', linewidth=3)
-plt.text(0.95*T, K*alpha + 0.07, "$A$")
-plt.text(0.95*T, alpha - 0.1, "$\\alpha$")
+plt.text(0.95*T, K*alpha + 0.07, "$A$", fontsize=16)
+plt.text(0.95*T, alpha - 0.1, "$\\alpha$", fontsize=16)
 plt.xlabel("Time $t$")
 plt.ylabel("Estimate $\widetilde A^\\varepsilon_t$")
-plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-sample-filter.png', bbox_inches='tight')
 plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-sample-filter.pdf', bbox_inches='tight')
-plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-sample-filter.svg', bbox_inches='tight')
 plt.clf()
 with open("./Paper Data/experiment1-theoretical-results-failure-sample-filter.npy", 'wb') as f:
     np.save(f, A_array)
 
 
-
+"""
 # try this for many trials
 @nb.njit(parallel=True)
 def multiscale_repeated_estimates(n_trials):
@@ -145,10 +145,9 @@ estimates = multiscale_repeated_estimates(50)
 plt.hist(estimates)
 plt.axvline(x=alpha, c=orange, linestyle='--', linewidth=3)
 plt.xlabel("Estimate $\widetilde A_T^\\varepsilon$")
-plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-histogram.png', bbox_inches='tight')
 plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-histogram.pdf', bbox_inches='tight')
-plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-histogram.svg', bbox_inches='tight')
 plt.clf()
 with open("./Paper Data/experiment1-theoretical-results-failure-histogram.npy", 'wb') as f:
     np.save(f, estimates)
 print("Mean estimate =", np.mean(estimates), "Standard deviation =", np.std(estimates))
+"""

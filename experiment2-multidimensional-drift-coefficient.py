@@ -6,21 +6,25 @@ from matplotlib.collections import LineCollection
 from matplotlib.colors import BoundaryNorm, ListedColormap
 from matplotlib import colors as mcolors
 from matplotlib.collections import StarPolygonCollection
-import scipy.integrate as integrate
+from scipy.special import i0
 from tqdm import tqdm 
 from pathlib import Path
 
 Path("./Paper Figures/").mkdir(parents=True, exist_ok=True)
 Path("./Paper Data/").mkdir(parents=True, exist_ok=True)
 
-plt.rcParams['font.size'] = 18
-plt.rcParams['figure.figsize'] = (6.4, 4.8)
+params = {'legend.fontsize': 'x-large',
+         'axes.labelsize': 'x-large',
+         'axes.titlesize':'x-large',
+         'xtick.labelsize':'x-large',
+         'ytick.labelsize':'x-large'}
+plt.rcParams.update(params)
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 blue = colors[0]
 orange = colors[1]
 
-MOVING_AVERAGE = True
+MOVING_AVERAGE = False#True
 
 @nb.njit
 def seed(a):
@@ -61,8 +65,8 @@ L = 2 * np.pi
 epsilon = 0.1
 sigma = 0.5
 
-T = 10**3#5 # Large T important!
-n = 10**6#8
+T = 10**5 # Large T important!
+n = 10**8
 dt = T / n
 
 Y = multiscale(A1, A2, L, epsilon, sigma, X0, T, n)
@@ -107,22 +111,18 @@ for t in tqdm(np.linspace(0, T, n+1)[:-1]):
 
     i += 1
 
-K = L**2 / (integrate.quad(lambda y: np.exp(-np.sin(2 * np.pi / L * y)/sigma), 0, L)[0] * integrate.quad(lambda y: np.exp(np.sin(2 * np.pi / L * y)/sigma), 0, L)[0])
+K = 1/i0(1/sigma)**2
 
 plt.plot(dt * np.arange(A_array.shape[0]), A_array[:, 0], color=blue, linewidth=3)
 plt.axhline(y=K*A1, color=orange, linewidth=3)
 plt.xlabel("Time $t$")
 plt.ylabel("Estimate $(\widehat{A}_t^\\varepsilon)_1$ of $A_1$")
 if MOVING_AVERAGE:
-    plt.savefig('./Paper Figures/experiment2-A1-sample-ma.png', bbox_inches='tight')
     plt.savefig('./Paper Figures/experiment2-A1-sample-ma.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A1-sample-ma.svg', bbox_inches='tight')
     with open("./Paper Data/experiment2-A1-sample-ma.npy", 'wb') as f:
         np.save(f, A_array[:, 0])
 else:
-    plt.savefig('./Paper Figures/experiment2-A1-sample-exponential.png', bbox_inches='tight')
     plt.savefig('./Paper Figures/experiment2-A1-sample-exponential.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A1-sample-exponential.svg', bbox_inches='tight')
     with open("./Paper Data/experiment2-A1-sample-exponential.npy", 'wb') as f:
         np.save(f, A_array[:, 0])
 plt.clf()
@@ -132,27 +132,25 @@ plt.axhline(y=K*A2, color=orange, linewidth=3)
 plt.xlabel("Time $t$")
 plt.ylabel("Estimate $(\widehat{A}_t^\\varepsilon)_2$ of $A_2$")
 if MOVING_AVERAGE:
-    plt.savefig('./Paper Figures/experiment2-A2-sample-ma.png', bbox_inches='tight')
     plt.savefig('./Paper Figures/experiment2-A2-sample-ma.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A2-sample-ma.svg', bbox_inches='tight')
     with open("./Paper Data/experiment2-A2-sample-ma.npy", 'wb') as f:
         np.save(f, A_array[:, 1])
 else:
-    plt.savefig('./Paper Figures/experiment2-A2-sample-exponential.png', bbox_inches='tight')
     plt.savefig('./Paper Figures/experiment2-A2-sample-exponential.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A2-sample-exponential.svg', bbox_inches='tight')
     with open("./Paper Data/experiment2-A2-sample-exponential.npy", 'wb') as f:
         np.save(f, A_array[:, 1])
 plt.clf()
 
-points = np.array([A_array[:, 0], A_array[:, 1]]).T.reshape(-1, 1, 2)
+A_array_ = A_array[1::10000]
+
+points = np.array([A_array_[:, 0], A_array_[:, 1]]).T.reshape(-1, 1, 2)
 segments = np.concatenate([points[:-1], points[1:]], axis=1)
-times_array = dt * np.arange(A_array.shape[0])
+times_array = dt * np.arange(A_array_.shape[0]) * 10000 + dt
 
 axs = plt.gca()
 
 # Create a continuous norm to map from data points to colors
-norm = plt.Normalize(times_array.min(), times_array.max())
+norm = mcolors.LogNorm(vmin=times_array.min(), vmax=times_array.max())#plt.Normalize(times_array.min(), times_array.max())
 lc = LineCollection(segments, cmap='viridis', norm=norm, zorder=1)
 # Set the values used for colormapping
 lc.set_array(times_array)
@@ -160,118 +158,17 @@ lc.set_linewidth(2)
 line = axs.add_collection(lc)
 plt.colorbar(line, label="Time $t$")
 
-plt.xlim(A_array[:, 0].min(), A_array[:, 0].max())
-plt.ylim(A_array[:, 1].min(), A_array[:, 1].max())
+plt.xlim(A_array_[:, 0].min(), A_array_[:, 0].max())
+plt.ylim(A_array_[:, 1].min(), A_array_[:, 1].max())
 plt.scatter([K*A1], [K*A2], c='r', s=200, marker="*", zorder=10)
 plt.xlabel("$(\widehat{A}_t^\\varepsilon)_1$")
 plt.ylabel("$(\widehat{A}_t^\\varepsilon)_2$")
 if MOVING_AVERAGE:
-    plt.savefig('./Paper Figures/experiment2-2D-sample-ma.png', bbox_inches='tight')
     plt.savefig('./Paper Figures/experiment2-2D-sample-ma.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-2D-sample-ma.svg', bbox_inches='tight')
     with open("./Paper Data/experiment2-2D-sample-ma.npy", 'wb') as f:
         np.save(f, A_array)
 else:
-    plt.savefig('./Paper Figures/experiment2-2D-sample-exponential.png', bbox_inches='tight')
     plt.savefig('./Paper Figures/experiment2-2D-sample-exponential.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-2D-sample-exponential.svg', bbox_inches='tight')
     with open("./Paper Data/experiment2-2D-sample-exponential.npy", 'wb') as f:
         np.save(f, A_array)
-plt.clf()
-
-
-
-KA = K*np.array([1., 2.])
-estimates_dim1 = int(n // 10000)+1
-# try this for many trials
-@nb.njit(parallel=True)
-def another_potential_repeated_estimates(n_trials):
-    estimates = np.zeros((estimates_dim1, 2))
-    for trial in nb.prange(n_trials):
-        Y = multiscale(A1, A2, L, epsilon, sigma, X0, T, n)
-
-        if not MOVING_AVERAGE:
-            delta = 1
-            Y_f = np.zeros(Y.shape[0]) # filtered
-            Y_f[0] = 0
-            for i in range(1, Y.shape[0]):
-                Y_f[i] = np.exp(-dt/delta) * Y_f[i-1] + np.exp(-dt/delta) * Y[i-1] * dt
-            Y_f = Y_f / delta
-        else:
-            delta = 1
-            Y_f = np.zeros(Y.shape[0])
-            Y_f[0] = 0
-            shift = int(delta/dt)
-            for i in range(1, shift):
-                Y_f[i] = 1/(i*dt) * np.sum(Y[:i+1]) * dt
-            for i in range(shift, Y.shape[0]):
-                Y_f[i] = 1/delta * np.sum(Y[i-shift:i]) * dt
-
-        Y_fpow = np.column_stack((-Y_f**3, Y_f))
-        Y_pow = np.column_stack((-Y**3, Y))
-        A_array = np.zeros((n+1, 2))
-
-        A_old = np.zeros(2)
-        A_new = np.zeros(2)
-        i = 0
-        j = 0
-        for t in np.linspace(0, T, n+1)[:-1]:
-            if i % 10000 == 0:#if n+1 - i <= estimates_dim1:
-                estimates[j] = estimates[j] + (A_old - KA)**2
-                j += 1
-            alpha_t = 1 / (1 + t/10)
-            Yi = Y[i]
-            Yfi = Y_f[i]
-
-            A_new = A_old - alpha_t * Y_fpow[i] * np.dot(A_old, Y_pow[i]) * dt + alpha_t * Y_fpow[i] * (Y[i+1] - Yi)
-            A_old[:] = A_new[:]
-            A_array[i+1] = A_new
-
-            i += 1
-        
-        estimates[-1] = estimates[-1] + (A_old - KA)**2
-    estimates = estimates / n_trials
-    estimates = np.sqrt(estimates)
-    return estimates
-
-estimates = another_potential_repeated_estimates(50)
-
-times = np.linspace(0, T, estimates.shape[0])
-
-plt.loglog(times, estimates[:, 0], color=blue, label="$L^2$ Error", linewidth=3)
-plt.loglog(times, times**(-0.5), color=orange, label="$\mathcal{O}(T^{-1/2})$ Reference", linewidth=3)
-plt.legend()
-plt.xlabel("Time $t$")
-plt.ylabel("Approximate $L^2$ Error of $(\widehat{A}_t^\\varepsilon)_1$ from $A_1$")
-if MOVING_AVERAGE:
-    plt.savefig('./Paper Figures/experiment2-A1-convergence-ma.png', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A1-convergence-ma.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A1-convergence-ma.svg', bbox_inches='tight')
-    with open("./Paper Data/experiment2-A1-convergence-ma.npy", 'wb') as f:
-        np.save(f, estimates[:, 0])
-else:
-    plt.savefig('./Paper Figures/experiment2-A1-convergence-exponential.png', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A1-convergence-exponential.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A1-convergence-exponential.svg', bbox_inches='tight')
-    with open("./Paper Data/experiment2-A1-convergence-exponential.npy", 'wb') as f:
-        np.save(f, estimates[:, 0])
-plt.clf()
-
-plt.loglog(times, estimates[:, 1], color=blue, label="$L^2$ Error", linewidth=3)
-plt.loglog(times, times**(-0.5), color=orange, label="$\mathcal{O}(T^{-1/2})$ Reference", linewidth=3)
-plt.legend()
-plt.xlabel("Time $t$")
-plt.ylabel("Approximate $L^2$ Error of $(\widehat{A}_t^\\varepsilon)_2$ from $A_2$")
-if MOVING_AVERAGE:
-    plt.savefig('./Paper Figures/experiment2-A2-convergence-ma.png', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A2-convergence-ma.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A2-convergence-ma.svg', bbox_inches='tight')
-    with open("./Paper Data/experiment2-A2-convergence-ma.npy", 'wb') as f:
-        np.save(f, estimates[:, 1])
-else:
-    plt.savefig('./Paper Figures/experiment2-A2-convergence-exponential.png', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A2-convergence-exponential.pdf', bbox_inches='tight')
-    plt.savefig('./Paper Figures/experiment2-A2-convergence-exponential.svg', bbox_inches='tight')
-    with open("./Paper Data/experiment2-A1-convergence-exponential.npy", 'wb') as f:
-        np.save(f, estimates[:, 1])
 plt.clf()
