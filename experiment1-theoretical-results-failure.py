@@ -120,34 +120,3 @@ plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-sample-filt
 plt.clf()
 with open("./Paper Data/experiment1-theoretical-results-failure-sample-filter.npy", 'wb') as f:
     np.save(f, A_array)
-
-
-"""
-# try this for many trials
-@nb.njit(parallel=True)
-def multiscale_repeated_estimates(n_trials):
-    estimates = np.zeros(n_trials)
-    for trial in nb.prange(n_trials):
-        Y = multiscale(alpha, L, epsilon, sigma, X0, T, n)
-
-        A_old = 0.
-        A_new = 0. 
-        for i, t in enumerate(np.linspace(0, T, n+1)[:-1]):
-            alpha_t = 1 / (1 + t/10)
-            Yi = Y[i]
-            A_new = A_old - alpha_t * A_old * Yi**2 * dt - alpha_t * Yi * (Y[i+1] - Yi)
-            A_old = A_new
-        
-        estimates[trial] = A_new
-    return estimates
-
-estimates = multiscale_repeated_estimates(50)
-plt.hist(estimates)
-plt.axvline(x=alpha, c=orange, linestyle='--', linewidth=3)
-plt.xlabel("Estimate $\widetilde A_T^\\varepsilon$")
-plt.savefig('./Paper Figures/experiment1-theoretical-results-failure-histogram.pdf', bbox_inches='tight')
-plt.clf()
-with open("./Paper Data/experiment1-theoretical-results-failure-histogram.npy", 'wb') as f:
-    np.save(f, estimates)
-print("Mean estimate =", np.mean(estimates), "Standard deviation =", np.std(estimates))
-"""

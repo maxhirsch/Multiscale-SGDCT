@@ -126,14 +126,6 @@ def multiscale_repeated_estimates(n_trials):
     return estimates
 
 estimates = multiscale_repeated_estimates(50)
-plt.hist(estimates[:, -1])
-plt.axvline(x=K*alpha, color=orange, linewidth=3)
-plt.title("Estimate $\widehat A_T^\\varepsilon$")
-plt.savefig('./Paper Figures/experiment1-theoretical-results-histogram.pdf', bbox_inches='tight')
-plt.clf()
-with open("./Paper Data/experiment1-theoretical-results-histogram.npy", 'wb') as f:
-    np.save(f, estimates)
-print("Mean estimate =", np.mean(estimates[:, -1]), "Standard deviation =", np.std(estimates[:, -1]))
 
 A = K*alpha
 

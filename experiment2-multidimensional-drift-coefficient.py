@@ -150,7 +150,7 @@ times_array = dt * np.arange(A_array_.shape[0]) * 10000 + dt
 axs = plt.gca()
 
 # Create a continuous norm to map from data points to colors
-norm = mcolors.LogNorm(vmin=times_array.min(), vmax=times_array.max())#plt.Normalize(times_array.min(), times_array.max())
+norm = mcolors.LogNorm(vmin=times_array.min(), vmax=times_array.max())
 lc = LineCollection(segments, cmap='viridis', norm=norm, zorder=1)
 # Set the values used for colormapping
 lc.set_array(times_array)

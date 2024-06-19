@@ -31,9 +31,6 @@ T = 10**3 # Large T important!
 n = 8*10**6
 dt = T / n
 
-def V1(x, y): # p(x, y)
-    return x**2/2 * np.cos(y) * (np.abs(x) <= 2)
-
 def K(x):
     if abs(x) > 2:
         return 1
