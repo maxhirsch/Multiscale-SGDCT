@@ -99,7 +99,7 @@ if delta_experiment:
     plt.text(0.05, alpha-0.05, "$\\alpha$", fontsize=16)
     plt.axhline(y=K*alpha, c=orange, linestyle="--", linewidth=3)
     plt.text(0.05, K*alpha+0.02, "$A$", fontsize=16)
-    plt.xlabel("$\zeta^{-1}$ (where $\\varepsilon = \delta^{\zeta}$)")
+    plt.xlabel("$\\xi$ (where $\delta = \\varepsilon^{\\xi}$)")
     plt.ylabel("Estimate $\widehat{A}^\\varepsilon_T$")
     plt.savefig('./Paper Figures/experiment1-theoretical-results-delta.pdf', bbox_inches='tight')
     plt.clf()
